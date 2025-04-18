@@ -6,55 +6,75 @@ import morgan from 'morgan';
 import path from 'path';
 import http from 'http';
 
-import { port } from './config/config';
+import { port, nodeEnv } from './config/config';
 import corsOptions from './config/cors';
 import { connectDB } from './config/db';
 import v0Router from './routes/v0';
 
-const startServer = async () => {
-  try {
-    const app = express();
+// Create Express app
+const app = express();
+const PORT = port || 4000;
+const __dirname = path.resolve();
 
-    const PORT = port || 4000;
-    const __dirname = path.resolve();
+// Apply middleware
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
+app.use(cors(corsOptions));
+app.use(helmet());
 
-    await connectDB();
+// Only use morgan in development
+if (nodeEnv === 'development') {
+  app.use(morgan('dev'));
+  
+  // Add request logging middleware in development
+  app.use((req, res, next) => {
+    console.log(`${req.method} ${req.url}`);
+    console.log('Request body:', req.body);
+    next();
+  });
+}
 
-    app.use(bodyParser.json());
-    app.use(bodyParser.urlencoded({ extended: true }));
-    app.use(cors(corsOptions));
-    app.use(morgan('dev'));
-    app.use(helmet());
+// Static files
+app.use('/public', express.static(path.join(__dirname, '/public')));
 
-    // Add request logging middleware
-    app.use((req, res, next) => {
-      console.log(`${req.method} ${req.url}`);
-      console.log('Request body:', req.body);
-      next();
-    });
+// Routes
+app.use('/v0', v0Router);
 
-    app.use('/public', express.static(path.join(__dirname, '/public')));
-    app.use('/v0', v0Router);
-    
-    app.get('/', (req, res) => {
-      res.status(200).json({
-        message: 'Server is running',
-      });
-    });
-
-    const server = http.createServer(app);
-    server.listen(PORT || 4000, () => {
-      console.log(`Server is running on port ${PORT}`);
-    });
-
-    return server;
-  } catch (error) {
-    console.error('Failed to start server:', error);
-    process.exit(1);
-  }
-};
-
-startServer().catch((error) => {
-  console.error('Unhandled error:', error);
-  process.exit(1);
+// Health check endpoint
+app.get('/', (req, res) => {
+  res.status(200).json({
+    message: 'Server is running',
+    environment: nodeEnv
+  });
 });
+
+// Connect to DB and start the server only in non-Vercel environments
+// Vercel will use the app as a serverless function
+if (process.env.VERCEL !== '1') {
+  const startServer = async () => {
+    try {
+      await connectDB();
+      const server = http.createServer(app);
+      server.listen(PORT, () => {
+        console.log(`Server is running on port ${PORT} in ${nodeEnv} mode`);
+      });
+    } catch (error) {
+      console.error('Failed to start server:', error);
+      process.exit(1);
+    }
+  };
+
+  startServer().catch((error) => {
+    console.error('Unhandled error:', error);
+    process.exit(1);
+  });
+} else {
+  // For Vercel, connect to DB but don't start a server
+  // This will be executed on cold starts
+  connectDB().catch((error) => {
+    console.error('Failed to connect to database:', error);
+  });
+}
+
+// Export for Vercel serverless function
+export default app;
