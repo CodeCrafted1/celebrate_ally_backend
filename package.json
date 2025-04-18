@@ -15,7 +15,7 @@
     "docker:clean": "docker-compose down -v && docker system prune -f",
     "typeorm": "typeorm-ts-node-commonjs",
     "dev": "docker-compose up --build",
-    "vercel-build": "tsc"
+    "vercel-build": "rm -rf dist && tsc"
   },
   "dependencies": {
     "@types/mongoose": "^5.11.96",

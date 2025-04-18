@@ -33,7 +33,7 @@ const userController = {
   
   async generateReferralLink(req: AuthRequest, res: Response) {
     try {
-      // The user ID should come from the authenticated user
+      // The user ID should come from the authenticated use
       const userId = req.user?._id;
       if (!userId) {
         return res.status(401).json({ error: 'Authentication required' });

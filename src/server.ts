@@ -14,7 +14,13 @@ import v0Router from './routes/v0';
 // Create Express app
 const app = express();
 const PORT = port || 4000;
-const __dirname = path.resolve();
+
+// Безпечно визначаємо __dirname для сумісності з різними середовищами
+const getDirname = () => {
+  if (typeof __dirname !== 'undefined') return __dirname;
+  return path.resolve();
+};
+const dirname = getDirname();
 
 // Apply middleware
 app.use(bodyParser.json());
@@ -35,7 +41,7 @@ if (nodeEnv === 'development') {
 }
 
 // Static files
-app.use('/public', express.static(path.join(__dirname, '/public')));
+app.use('/public', express.static(path.join(dirname, '/public')));
 
 // Routes
 app.use('/v0', v0Router);
