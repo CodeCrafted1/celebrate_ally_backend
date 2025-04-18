@@ -9,6 +9,7 @@ import http from 'http';
 import { port } from './config/config';
 import corsOptions from './config/cors';
 import { connectDB } from './config/db';
+import v0Router from './routes/v0';
 
 const startServer = async () => {
   try {
@@ -25,9 +26,16 @@ const startServer = async () => {
     app.use(morgan('dev'));
     app.use(helmet());
 
-    app.use('/public', express.static(path.join(__dirname, '/public')));
-    // app.use('/v0', v0Router);
+    // Add request logging middleware
+    app.use((req, res, next) => {
+      console.log(`${req.method} ${req.url}`);
+      console.log('Request body:', req.body);
+      next();
+    });
 
+    app.use('/public', express.static(path.join(__dirname, '/public')));
+    app.use('/v0', v0Router);
+    
     app.get('/', (req, res) => {
       res.status(200).json({
         message: 'Server is running',

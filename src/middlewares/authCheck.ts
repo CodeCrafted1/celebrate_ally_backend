@@ -3,7 +3,16 @@ import jwt from "jsonwebtoken";
 import { jwtSecret } from "../config/config";
 import { NextFunction, Request, Response } from "express";
 
-const checkToken = (req:Request & { id: string }, res:Response, next:NextFunction ) => {
+// Extend Request interface to include id property
+declare global {
+  namespace Express {
+    interface Request {
+      id?: string;
+    }
+  }
+}
+
+const checkToken = (req: Request, res: Response, next: NextFunction) => {
   const authHeader = req.header("Authorization");
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
     return res.status(401).json({ message: "No token, authorization denied" });
@@ -11,7 +20,6 @@ const checkToken = (req:Request & { id: string }, res:Response, next:NextFunctio
   const token = authHeader.split(' ')[1];
   try {
     const { userId } = jwt.verify(token, jwtSecret) as { userId: string };
-    console.log(jwt.verify(token, jwtSecret));
     req.id = userId;
     next();
   } catch (e) {
@@ -19,4 +27,4 @@ const checkToken = (req:Request & { id: string }, res:Response, next:NextFunctio
   }
 };
 
-export default checkToken;
+export default checkToken;    

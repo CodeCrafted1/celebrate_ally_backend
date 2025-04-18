@@ -1,13 +1,16 @@
 import jwt from "jsonwebtoken"
 
-import { jwtSecret } from "../config/config.js"
+import { jwtSecret } from "../config/config";
 
-const generateToken = (user:any) => {
+/**
+ * Generates a JWT token for a user
+ * @param userId User ID to encode in the token
+ * @returns JWT token
+ */
+export const generateToken = (userId: string) => {
     return jwt.sign(
-      { userId: user._id },
+      { userId },
       jwtSecret,
       { expiresIn: '24h' }
     );
   }
-
-export default generateToken
